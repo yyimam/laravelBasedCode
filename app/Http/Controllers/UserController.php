@@ -55,7 +55,41 @@ class UserController extends Controller
             $current_role = $current_user->roles()->first();
             $current_permissions = Role::where('id', $current_role_id)->with("permissions")->first()->permissions->pluck("slug");
 
-            return response()->json(["user" => $current_user, "role" => $current_role, "permissions" => $current_permissions],200);
+            // Return Permission's Slug
+            // return response()->json(["user" => $current_user, "role" => $current_role, "permissions" => $current_permissions],200);
+
+            // Preparing Data To Return As A Front-End friendly Response
+            $availible_pages  = ["user","post","role"];
+            $permissions = ["view","viewspecific","add","update","delete"];
+            $main_role_permissions = [];
+
+            foreach ($availible_pages as $page) {
+                $page_name = $page."-";
+                $page_name_lenght = strlen($page_name);
+
+                $this_role_permissions = [];
+                foreach ($current_permissions as $p) {
+
+                    if (substr($p, 0, $page_name_lenght) === $page_name) {
+                        $permission_name = explode($page_name, $p);
+                        // print_r($permission_name);
+                        // echo "\n";
+                        foreach ($permissions as $key) {
+                            if ($key === $permission_name[1]){
+                                $status = true;
+                                break;
+                            } else{
+                                $status = false;
+                            }
+                        }
+                        $this_role_permissions += [$permission_name[1] => $status];
+                    }
+                }
+                array_push($main_role_permissions, ["page" => $page, "Authorization" => $this_role_permissions]);
+            }
+
+            // Returning Response
+            return response()->json(["user" => $current_user, "role" => $current_role, "permissions" => $main_role_permissions],200);
         }
     }
     
