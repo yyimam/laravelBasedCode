@@ -1,0 +1,11 @@
+|#Run Lumen server:
+|command: php -S localhost:8000 -t public
+
+|#Refresh Database and Populate with Default data:
+|command(powershell): php artisan migrate:fresh; php artisan db:seed
+|command(command prompt): php artisan migrate:fresh && php artisan db:seed
+
+|#Default Data:
+|By default database contains a superAdmin with email: admin123@gmail.com & password: admin123.
+|superAdmin can access anything.
+
