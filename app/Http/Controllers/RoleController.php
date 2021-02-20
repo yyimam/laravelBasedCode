@@ -69,13 +69,25 @@ class RoleController extends Controller
 
             $listOfPermission = explode(',', $request->permission);
             foreach ($listOfPermission as $Permission) {
-                $permissions = new Permission;
-                $permissions->name = $Permission;
-                $permissions->slug = strtolower(str_replace(" ","-", $Permission));
-                $permissions->save();
+                $create_permission_name = $Permission;
+                $create_permission_slug = strtolower(str_replace(" ","-", $Permission));
 
-                $role->permissions()->attach($permissions->id);
-                $role->save();
+                $finding_permissions = Permission::where('slug',$create_permission_slug)->first();
+                if ($finding_permissions != null && $finding_permissions->count() > 0)
+                { 
+                    $role->permissions()->attach($finding_permissions->id);
+                    $role->save();
+                }
+                else {
+                    $permissions = new Permission;
+                    $permissions->name = $Permission;
+                    $permissions->slug = strtolower(str_replace(" ","-", $Permission));
+                    $permissions->save();
+    
+                    $role->permissions()->attach($permissions->id);
+                    $role->save();
+                }
+
         }
         return response("Added",201);
         }

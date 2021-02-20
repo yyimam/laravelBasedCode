@@ -16,9 +16,9 @@ class AuthServiceProvider extends ServiceProvider
      */
     public function register()
     {
-        Gate::policy(User::class, Policies\UserPolicy::class);
-        Gate::policy(Role::class, RolePolicy::class);
-        Gate::policy(Post::class, PostPolicy::class);
+        Gate::policy('App\Models\User', 'App\Policies\UserPolicy');
+        Gate::policy('App\Models\Role', 'App\Policies\RolePolicy');
+        Gate::policy('App\Models\Post', 'App\Policies\PostPolicy');
     }
 
     /**
@@ -32,6 +32,7 @@ class AuthServiceProvider extends ServiceProvider
         // application. The callback which receives the incoming request instance
         // should return either a User instance or null. You're free to obtain
         // the User instance via an API token or any other method necessary.
+
 
         $this->app['auth']->viaRequest('api', function ($request) {
             if ($request->header('Authorization')) {

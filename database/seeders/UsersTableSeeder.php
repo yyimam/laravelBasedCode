@@ -21,6 +21,7 @@ class UsersTableSeeder extends Seeder
         $user = new User;
         $user->name = "Admin";
         $user->email = "admin123@gmail.com";
+        $user->email_verified_at = date("Y-m-d");
         $user->password = Hash::make("admin123");
         $user->api_token = $token;
         $user->save();

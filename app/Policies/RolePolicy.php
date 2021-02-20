@@ -1,8 +1,6 @@
 <?php
 
 namespace App\Policies;
-use App\Models\User;
-use App\Models\Role;
 use Illuminate\Support\Facades\Auth;
 
 class RolePolicy extends Policy

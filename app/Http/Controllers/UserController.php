@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Auth;
 // use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Mail;
+use App\Policies\Policy;
 
 
 class UserController extends Controller
@@ -26,6 +27,17 @@ class UserController extends Controller
     //         abort(403);
     //     }
     // }
+
+    public function check(){
+        // $pol = new Policy;
+        // $pol_name = "role-add";
+        // if ($pol->checkPermissions($pol_name)) {
+        //     dd("Allowed");
+        // }
+        // dd("Not Allowed");
+
+        dd(Auth::user());
+    }
 
     public function login(Request $request)
     {
@@ -48,13 +60,16 @@ class UserController extends Controller
 
         if (!$user || !Hash::check($request->password, $user->password)) {
             return response('These credentials do not match our records.',404);
-        } else {
+        } 
+        elseif ($user->email_verified_at === null) {
+            return response('Please verify your email'.$request->email_verified_at,403);
+        }
+        else {
 
             $current_user = User::where('email', $request->email)->first();
             $current_role_id = $current_user->roles()->first()->id;
             $current_role = $current_user->roles()->first();
             $current_permissions = Role::where('id', $current_role_id)->with("permissions")->first()->permissions->pluck("slug");
-
             // Return Permission's Slug
             // return response()->json(["user" => $current_user, "role" => $current_role, "permissions" => $current_permissions],200);
 
@@ -66,27 +81,67 @@ class UserController extends Controller
             foreach ($availible_pages as $page) {
                 $page_name = $page."-";
                 $page_name_lenght = strlen($page_name);
-
                 $this_role_permissions = [];
-                foreach ($current_permissions as $p) {
 
-                    if (substr($p, 0, $page_name_lenght) === $page_name) {
-                        $permission_name = explode($page_name, $p);
-                        // print_r($permission_name);
-                        // echo "\n";
-                        foreach ($permissions as $key) {
-                            if ($key === $permission_name[1]){
-                                $status = true;
-                                break;
-                            } else{
-                                $status = false;
-                            }
+                foreach ($permissions as $p) {
+                    foreach ($current_permissions as $cp) {
+                        if (substr($cp, 0, $page_name_lenght) === $page_name) {
+                            
+                            $status = true;
                         }
-                        $this_role_permissions += [$permission_name[1] => $status];
+                        else {
+                            $status = false;
+                        }
                     }
+                    $this_role_permissions += [$p => $status];
                 }
                 array_push($main_role_permissions, ["page" => $page, "Authorization" => $this_role_permissions]);
             }
+            
+            // dd($main_role_permissions);
+
+            // foreach ($availible_pages as $page) {
+            //     $page_name = $page."-";
+            //     $page_name_lenght = strlen($page_name);
+
+            //     $this_role_permissions = [];
+            //     $permissions_array = [];
+
+            //     foreach ($current_permissions as $p) {
+            //         if (substr($p, 0, $page_name_lenght) === $page_name) {
+
+            //             $permission_name = explode($page_name, $p);
+            //             $permissions_array += $permission_name[1];
+
+            //         }
+                    
+            //     }
+                
+            //     foreach ($permissions as $p) {}
+
+            //     foreach ($current_permissions as $p) {
+            //         if (substr($p, 0, $page_name_lenght) === $page_name) {
+
+            //             $permission_name = explode($page_name, $p);
+            //             // print_r($permission_name);
+            //             // echo "\n";
+            //             // foreach ($permissions as $key) {
+            //             //     foreach ($variable as $key => $value) {
+            //             //         # code...
+            //             //     }
+            //             //     if ($key === $permission_name[1]){
+            //             //         $status = true;
+            //             //         break;
+            //             //     } else{
+            //             //         $status = false;
+            //             //     }
+            //             // }
+            //             // $this_role_permissions += [$permission_name[1] => $status];
+
+            //         }
+            //     }
+            //     array_push($main_role_permissions, ["page" => $page, "Authorization" => $this_role_permissions]);
+            // }
 
             // Returning Response
             return response()->json(["user" => $current_user, "role" => $current_role, "permissions" => $main_role_permissions],200);
@@ -150,11 +205,6 @@ class UserController extends Controller
         return response("reset link has been sent via Email",200);
     }
 
-    public function emailVerification()
-    {
-
-    }
-
     public function resetPassword($token, Request $request)
     {
         // VALIDATION
@@ -192,7 +242,90 @@ class UserController extends Controller
             abort(404);
         }
     }
-    
+
+    public function verifyemail(Request $request)
+    {
+        $rules = array(
+            "email" => ["required","email","exists:users,email"]
+        );
+
+        $validator = Validator::make($request->all(),$rules);
+        
+        if ($validator->fails()) {
+            // Detailed Invalid Data information
+            // return response(['message' => $validator->errors()], 422);
+            return response(["Invalid Data"], 422);
+        }
+
+        $pr = Verify_email::where("email",$request->email)->first();
+
+        if ($pr != null && $pr->count() > 0) {        
+            $to = Carbon::createFromFormat('Y-m-d H:s:i', $pr->created_at);
+            $from = Carbon::createFromFormat('Y-m-d H:s:i', date('Y-m-d H:s:i'));
+            $diff_in_hours = $to->diffInHours($from);
+
+            if ($diff_in_hours > 0) {
+                $pr->delete();
+
+                $reset_token = str_replace(".","0",Hash::make(Str::random(59)));
+                $reset_token = str_replace("/","A",$reset_token);
+                $reset_token = str_replace("\\","x",$reset_token);
+                $email = $request->email;
+
+                $pr = new Verify_email;
+                $pr->email = $email;
+                $pr->token = $reset_token;
+                $pr->save(); 
+            }
+            else {
+                $reset_token = $pr->token;
+                $email = $request->email;
+            }
+        } else {
+            $reset_token = str_replace(".","0",Hash::make(Str::random(59)));
+            $reset_token = str_replace("/","A",$reset_token);
+            $reset_token = str_replace("\\","x",$reset_token);
+            $email = $request->email;
+
+            $pr = new Verify_email;
+            $pr->email = $email;
+            $pr->token = $reset_token;
+            $pr->save(); 
+        }
+
+        $reset_link = "http://localhost:8000/emailverification". "/" . $reset_token;
+        $details = ['link' => $reset_link];
+        Mail::to($request->email)->send(new \App\Mail\MyTestMail($details));
+       
+        return response("Email verification link has been sent",200);
+
+    }
+
+    public function emailVerification($token)
+    {
+        $pr = Verify_email::where("token",$token)->count();
+        $prr = Verify_email::where("token",$token)->first();
+
+        if ($pr > 0) {
+            $to = Carbon::createFromFormat('Y-m-d H:s:i', $prr->created_at);
+            $from = Carbon::createFromFormat('Y-m-d H:s:i', date('Y-m-d H:s:i'));
+            $diff_in_hours = $to->diffInHours($from);
+            
+            if ($diff_in_hours > 0) {
+                Verify_email::where("email",$prr->email)->delete();
+                return response("Link Expired",410);
+            } else {
+                $user = User::where("email",$prr->email)->first();
+                $user_update = User::findorFail($user->id);
+                $user_update->email_verified_at =  date("Y-m-d");
+                $user_update->save();
+                return response("", 200);
+            }
+        } else {
+            abort(404);
+        }
+    }
+
     public function view(Request $request)
     {
         if ($request->user()->cannot('view', Auth::user())) {
@@ -250,6 +383,7 @@ class UserController extends Controller
             $user = new User;
             $user->name = $request->name;
             $user->email = $request->email;
+            $user->email_verified_at = date("Y-m-d");
             $user->password = Hash::make($request->password);
             $user->api_token = $token;
             $check = $user->save();

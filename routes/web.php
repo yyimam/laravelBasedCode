@@ -25,10 +25,14 @@ $router->get('/mail', function () use ($router) {
     dd("Email is Sent.");
 });
 
+$router->get('check', 'UserController@check');
 $router->post('users/login', 'UserController@login');
+
 $router->post('/forgotpassword', 'UserController@forgotPassword');
 $router->post('/resetpassword/{token}', 'UserController@resetPassword');
-$router->post('/emailverification', 'UserController@login');
+
+$router->post('/verifyemail', 'UserController@verifyemail');
+$router->post('/emailverification/{token}', 'UserController@emailVerification');
 
 $router->group(['middleware' => 'auth'], function () use ($router) { 
 
