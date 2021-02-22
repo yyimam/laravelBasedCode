@@ -180,7 +180,7 @@ class UserController extends Controller
 
         $reset_link = "http://localhost:8000/resetpassword". "/" . $reset_token;
         $details = ['link' => $reset_link];
-        Mail::to($request->email)->send(new \App\Mail\MyTestMail($details));
+        Mail::to($request->email)->send(new \App\Mail\PasswordReset($details));
        
         return response("reset link has been sent via Email",200);
     }

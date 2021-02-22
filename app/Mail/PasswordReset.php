@@ -6,7 +6,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
   
-class MyTestMail extends Mailable
+class PasswordReset extends Mailable
 {
     use Queueable, SerializesModels;
   
@@ -30,6 +30,6 @@ class MyTestMail extends Mailable
     public function build()
     {
         return $this->subject('you Reqested Password reset - Barebone_Lumen')
-                    ->view('main');
+                    ->view('password');
     }
 }
