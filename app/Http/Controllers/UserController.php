@@ -8,9 +8,10 @@ use Illuminate\Support\Facades\Hash;
 use App\Models\User;
 use App\Models\Role;
 use App\Models\Password_reset;
+use App\Models\Verify_email;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
-// use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Mail;
 use App\Policies\Policy;
@@ -18,27 +19,6 @@ use App\Policies\Policy;
 
 class UserController extends Controller
 {
-    // public function __construct()
-    // {
-    //     if (Gate::allows('Onlyadmin', Auth::user())) {
-
-    //     }    
-    //     else if (Gate::denies('Onlyadmin', Auth::user())) {
-    //         abort(403);
-    //     }
-    // }
-
-    public function check(){
-        // $pol = new Policy;
-        // $pol_name = "role-add";
-        // if ($pol->checkPermissions($pol_name)) {
-        //     dd("Allowed");
-        // }
-        // dd("Not Allowed");
-
-        dd(Auth::user());
-    }
-
     public function login(Request $request)
     {
         // VALIDATION
@@ -328,10 +308,10 @@ class UserController extends Controller
 
     public function view(Request $request)
     {
-        if ($request->user()->cannot('view', Auth::user())) {
+        if (Gate::denies('check',"user-view")) {
             abort(403);
         }
-        elseif ($request->user()->can('view', Auth::user())) {
+        else if (Gate::allows('check',"user-view")) {
             $user= User::all();
             return response()->json($user);
         }
@@ -340,11 +320,10 @@ class UserController extends Controller
 
     public function viewSpecific($id, Request $request)
     {
-        if ($request->user()->cannot('viewSpecific', Auth::user())) {
+        if (Gate::denies('check',"user-viewspecific")) {
             abort(403);
         }
-        elseif ($request->user()->can('viewSpecific', Auth::user()))
-        {
+        else if (Gate::allows('check',"user-viewspecific")) {
             // VALIDATION
             if (!ctype_digit($id)) {
                 return response([ 'message' => "Invalid Data"], 422);
@@ -357,10 +336,10 @@ class UserController extends Controller
 
     public function add(Request $request)
     {      
-        if ($request->user()->cannot('add', Auth::user())) {
+        if (Gate::denies('check',"user-add")) {
             abort(403);
         }
-        elseif ($request->user()->can('add', Auth::user())) {
+        else if (Gate::allows('check',"user-add")) {
 
             // VALIDATION
             $rules = array(
@@ -397,6 +376,10 @@ class UserController extends Controller
 
     public function update($id, Request $request)
     {
+        if (Gate::denies('check',"user-update")) {
+            abort(403);
+        }
+        else if (Gate::allows('check',"user-update")) {
         // VALIDATION
         $rules = array(
             "name" => ["required","min:3"],
@@ -419,10 +402,6 @@ class UserController extends Controller
         }
 
         // Data Processing
-        if ($request->user()->cannot('update', Auth::user())) {
-            abort(403);
-        }     
-        elseif ($request->user()->can('update', Auth::user())) {
             $user = User::findorFail($id);
             $user->name = $request->name;
             $user->email = $request->email;
@@ -440,10 +419,10 @@ class UserController extends Controller
 
     public function delete($id, Request $request)
     {
-        if ($request->user()->cannot('delete', Auth::user())) {
+        if (Gate::denies('check',"user-delete")) {
             abort(403);
         }
-        elseif ($request->user()->can('delete', Auth::user())) {
+        else if (Gate::allows('check',"user-delete")) {
 
             // VALIDATING ID
             if (!ctype_digit($id)) {

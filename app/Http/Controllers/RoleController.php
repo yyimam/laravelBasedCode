@@ -7,15 +7,17 @@ use App\Models\Role;
 use App\Models\Permission;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Gate;
+
 
 class RoleController extends Controller
 {
     public function view(Request $request)
     {
-        if ($request->user()->cannot('view', Auth::user())) {
+        if (Gate::denies('check',"role-view")) {
             abort(403);
         }
-        elseif ($request->user()->can('view', Auth::user())) {
+        else if (Gate::allows('check',"role-view")) {
             $data = Role::all();
             return response()->json($data);
         }
@@ -23,10 +25,10 @@ class RoleController extends Controller
 
     public function viewSpecific($id, Request $request)
     {
-        if ($request->user()->cannot('viewSpecific', Auth::user())) {
+        if (Gate::denies('check',"role-viewspecific")) {
             abort(403);
         }
-        elseif ($request->user()->can('viewSpecific', Auth::user())) {
+        else if (Gate::allows('check',"role-viewspecific")) {
           
             // VALIDATING ID
             if (!ctype_digit($id)) {
@@ -41,16 +43,15 @@ class RoleController extends Controller
 
     public function add(Request $request)
     {
-
-        if ($request->user()->cannot('add', Auth::user())) {
+        if (Gate::denies('check',"role-add")) {
             abort(403);
         }
-        elseif ($request->user()->can('add', Auth::user())) {
+        else if (Gate::allows('check',"role-add")) {
 
             // VALIDATION
             $rules = array(
                 "name" => ["required","min:3"],
-                "slug" => ["required","unique:roles,slug","min:3"],
+                "slug" => ["required","min:3"],
                 "permission" => ["required","min:3"],
             );
 
@@ -95,15 +96,15 @@ class RoleController extends Controller
 
     public function update($id, Request $request)
     {
-        if ($request->user()->cannot('update', Auth::user())) {
+        if (Gate::denies('check',"role-update")) {
             abort(403);
         }
-        elseif ($request->user()->can('update', Auth::user())) {
+        else if (Gate::allows('check',"role-update")) {
             
             // VALIDATION
             $rules = array(
                 "name" => ["required","min:3"],
-                "slug" => ["required","unique:roles,slug","min:3"],
+                "slug" => ["required","min:3"],
                 "permission" => ["required","min:3"],
             );
 
@@ -153,10 +154,10 @@ class RoleController extends Controller
 
     public function delete($id, Request $request)
     {
-        if ($request->user()->cannot('delete', Auth::user())) {
+        if (Gate::denies('check',"role-delete")) {
             abort(403);
         }
-        elseif ($request->user()->can('delete', Auth::user())) {
+        else if (Gate::allows('check',"role-delete")) {
 
         // VALIDATING ID
         if (!ctype_digit($id)) {
