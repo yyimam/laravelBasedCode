@@ -239,7 +239,12 @@ class UserController extends Controller
 
         $pr = Verify_email::where("email",$request->email)->first();
 
-        if ($pr != null && $pr->count() > 0) {        
+        if ($pr != null && $pr->count() > 0) {
+            
+            $verification_check = User::where("email",$request->email)->first();
+            if ($verification_check->email_verified_at != null) {
+                return response("Your Email is Verified",409);
+            }
             $to = Carbon::createFromFormat('Y-m-d H:s:i', $pr->created_at);
             $from = Carbon::createFromFormat('Y-m-d H:s:i', date('Y-m-d H:s:i'));
             $diff_in_hours = $to->diffInHours($from);
@@ -275,7 +280,7 @@ class UserController extends Controller
 
         $reset_link = "http://localhost:8000/emailverification". "/" . $reset_token;
         $details = ['link' => $reset_link];
-        Mail::to($request->email)->send(new \App\Mail\MyTestMail($details));
+        Mail::to($request->email)->send(new \App\Mail\EmailVerify($details));
        
         return response("Email verification link has been sent",200);
 
