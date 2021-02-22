@@ -291,7 +291,7 @@ class UserController extends Controller
         $pr = Verify_email::where("token",$token)->count();
         $prr = Verify_email::where("token",$token)->first();
 
-        if ($pr > 0) {
+        if ($pr != null && $pr > 0) {
             $to = Carbon::createFromFormat('Y-m-d H:s:i', $prr->created_at);
             $from = Carbon::createFromFormat('Y-m-d H:s:i', date('Y-m-d H:s:i'));
             $diff_in_hours = $to->diffInHours($from);
@@ -303,7 +303,16 @@ class UserController extends Controller
                 $user = User::where("email",$prr->email)->first();
                 $user_update = User::findorFail($user->id);
                 $user_update->email_verified_at =  date("Y-m-d");
-                $user_update->save();
+                $suc_check = $user_update->save();
+
+                if ($suc_check) {
+                    Verify_email::where("email",$prr->email)->delete();
+                }
+                else {
+                    return response("Something went wrong", 500);
+                }
+
+
                 return response("", 200);
             }
         } else {
